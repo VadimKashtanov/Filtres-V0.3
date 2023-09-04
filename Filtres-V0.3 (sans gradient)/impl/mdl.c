@@ -46,13 +46,3 @@ float f(Mdl_t * mdl, uint depart) {
 	uint * n = mdl->n;
 
 };
-
-Mdl_t * cree_mdl();
-void liberer_mdl();
-
-
-//	Qlqs fonctions directes
-static float ppossibles[] = {-2, -1, 1, 2};
-float poid_rnd() {
-	return ppossibles[rand() % 4];
-};

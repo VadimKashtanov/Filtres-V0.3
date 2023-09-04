@@ -4,6 +4,9 @@
 
 //	Poids = {-2, -1, 1, 2};
 
+#define POIDS_NEU(n) n
+#define CONSTS_FLTR(n) n
+
 typedef struct {
 	//	Config dimentions & entree de la pile
 	uint C;
@@ -22,8 +25,12 @@ typedef struct {
 } Mdl_t;
 
 //	Allocation Memoire
-Mdl_t * cree_mdl();
-void liberer_mdl();
+Mdl_t * cree_mdl(uint C, uint * y, uint * n, uint * type);
+void liberer_mdl(Mdl_t * mdl);
+
+//	Memoire dure
+void ecrire_mdl(Mdl_t * mdl, char * file);
+Mdl_t * lire_mdl(char * file);
 
 
 //	Qlqs fonctions directes
