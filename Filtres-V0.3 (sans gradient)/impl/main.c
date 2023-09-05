@@ -6,21 +6,21 @@ uint __n[] = {4,2,2};
 uint __type[] = {0,2,2};
 
 /*
-				90%
+				80%
  G -------- G
-    =     =     10%
+    =     =     20%
        =
-    =     =     75%
+    =     =     40%
  P -------- P
-                25%
+                60%
 */
 
-#define GG .75
-#define GP .20
+#define GG .90
+#define GP .70
 #define PG 1.-GG
 #define PP 1.-GP;
-float MUTG_cst     =.10,  MUTP_cst     =.30;
-float MUTG_p       =.10,  MUTP_p       =.30;
+float MUTG_cst     =.10,  MUTP_cst     =.20;
+float MUTG_p       =.10,  MUTP_p       =.20;
 float MUTG_ema_int =.00,  MUTP_ema_int =.00;
 float MUTG_depuis  =.00,  MUTP_depuis  =.00;
 
@@ -40,6 +40,39 @@ void mixer(Mdl_t * G, Mdl_t * P) {
 		if (rnd() < MUTG_cst) G->conste[i] = (2*G->conste[i] + rnd())/3;
 		if (rnd() < MUTP_cst) P->conste[i] = (2*G->conste[i] + rnd())/3;
 	};
+
+	float _maxG, _maxP, _minG, _minP;
+	float _P, _G;
+	uint p;
+	for (uint i=0; i < G->C; i++) {
+		if (G->type[i] != 2) {
+			for (uint j=0; j < G->y[i]; j++) {
+				_G = G->conste[G->conste_depart[c] + j*G->n[i] + 0];
+				_P = P->conste[G->conste_depart[c] + j*G->n[i] + 0];
+				_maxG = _G;
+				_maxP = _P;
+				_minG = _G;
+				_minP = _P;
+				for (uint k=1; k < G->n[i]; k++) {
+					_G = G->conste[G->conste_depart[c] + j*G->n[i] + k];
+					_P = P->conste[G->conste_depart[c] + j*G->n[i] + k];
+					if (_G > _maxG) _maxG = _G;
+					if (_G < _minG) _minG = _G;
+					if (_P > _maxP) _maxP = _P;
+					if (_P < _minP) _minP = _P;
+				}
+				//
+				assert(_minG != _maxG);
+				assert(_maxP != _minP);
+				//
+				for (uint k=0; k < G->n[i]; k++) {
+					p = G->conste_depart[c] + j*G->n[i] + k;
+					G->conste[p] = (G->conste[p]-_minG)/(_maxG-_minG);
+					P->conste[p] = (P->conste[p]-_minP)/(_maxP-_minP);
+				}
+			}
+		}
+	}
 
 	//	Mixage des poids
 	for (uint i=0; i < G->poids; i++) {
@@ -118,6 +151,13 @@ void gain(Mdl_t * mdl, float * _gain, float * _prediction) {
 
 	_gain[0] -= USDT;
 	_prediction[0] /= (float)(PRIXS-1-DEPART);
+
+	/*if (_gain[0] > 10000) {
+		printf("%f %f\n", _gain[0], _prediction[0]);
+		plume_mdl(mdl);
+		comportement(mdl);
+		exit(0);
+	}*/
 };
 
 //	=======================================
@@ -127,7 +167,7 @@ int main() {
 	charger_les_prixs();
 
 	//	La population
-	uint n = 3;
+	uint n = 5;
 #define K 1 		// K : combien de perdants pour 1 gagant
 	uint N = (1+K)*n;
 	Mdl_t * mdl[N];
@@ -195,7 +235,7 @@ int main() {
 
 		//	Sommes des Points
 		for (uint i=0; i < N; i++) {
-			points[rang_gains[i]] += N-i;
+			points[rang_gains[i]] += 2*(N-i);
 			points[rang_prediction[i]] += N-i;
 		}
 

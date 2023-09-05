@@ -8,7 +8,11 @@ static float filtre_n(float * x, float * filtre, uint n) {
 		if (_x > _max) _max = _x;
 		if (_x < _min) _min = _x;
 	}
-	if (_min == _max) ERR("Impossible de normaliser un vecteur uniforme");
+	if (_min == _max) {
+		_min=0;_max=1;
+		for (uint i=0; i < n; i++) x[i]=0.5;
+		//ERR("Impossible de normaliser un vecteur uniforme");
+	}
 
 	//
 	float x_norm[n];
