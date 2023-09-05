@@ -1,9 +1,9 @@
 #include "mdl.h"
 
-uint C = 3;
-uint y[] = {3,2,1};
-uint n[] = {4,2,2};
-uint type[] = {0,2,2};
+uint __C = 3;
+uint __y[] = {3,2,1};
+uint __n[] = {4,2,2};
+uint __type[] = {0,2,2};
 
 /*
 				90%
@@ -15,11 +15,17 @@ uint type[] = {0,2,2};
                 25%
 */
 
-float GG=.90, GP=.75, PG=.10, PP=.25;
-float MUTG=.10, MUTP=.20;
+#define GG .75
+#define GP .20
+#define PG 1.-GG
+#define PP 1.-GP;
+float MUTG_cst     =.10,  MUTP_cst     =.30;
+float MUTG_p       =.10,  MUTP_p       =.30;
+float MUTG_ema_int =.00,  MUTP_ema_int =.00;
+float MUTG_depuis  =.00,  MUTP_depuis  =.00;
 
 void mixer(Mdl_t * G, Mdl_t * P) {
-	assert(G->consets == P->constes);
+	assert(G->constes == P->constes);
 	assert(G->poids == P->poids);
 
 	float tmp;
@@ -31,8 +37,8 @@ void mixer(Mdl_t * G, Mdl_t * P) {
 		if (rnd() < GP) G->conste[i] = P->conste[i];
 		if (rnd() < PG) P->conste[i] = tmp;
 
-		if (rnd() < MUTG) G->conste[i] = (2*G->conste[i] + rnd())/3;
-		if (rnd() < MUTP) P->conste[i] = (2*G->conste[i] + rnd())/3;
+		if (rnd() < MUTG_cst) G->conste[i] = (2*G->conste[i] + rnd())/3;
+		if (rnd() < MUTP_cst) P->conste[i] = (2*G->conste[i] + rnd())/3;
 	};
 
 	//	Mixage des poids
@@ -41,8 +47,8 @@ void mixer(Mdl_t * G, Mdl_t * P) {
 		if (rnd() < GP) G->poid[i] = P->poid[i];
 		if (rnd() < PG) P->poid[i] = tmp;
 
-		if (rnd() < MUTG) G->poid[i] = poid_rnd();
-		if (rnd() < MUTP) P->poid[i] = poid_rnd();
+		if (rnd() < MUTG_p) G->poid[i] = poid_rnd();
+		if (rnd() < MUTP_p) P->poid[i] = poid_rnd();
 	};
 
 	//	Mixage des Ema & Intervalles
@@ -52,29 +58,29 @@ void mixer(Mdl_t * G, Mdl_t * P) {
 		if (rnd() < GP) G->ema[i] = P->ema[i];
 		if (rnd() < PG) P->ema[i] = c;
 
-		if (rnd() < MUTG) G->ema[i] = rand() % NB_DIFF_EMA;
-		if (rnd() < MUTP) P->ema[i] = rand() % NB_DIFF_EMA;
+		if (rnd() < MUTG_ema_int) G->ema[i] = rand() % NB_DIFF_EMA;
+		if (rnd() < MUTP_ema_int) P->ema[i] = rand() % NB_DIFF_EMA;
 
 		//	Intervalles
 		c = G->intervalles[i];
 		if (rnd() < GP) G->intervalles[i] = P->intervalles[i];
 		if (rnd() < PG) P->intervalles[i] = c;
 
-		if (rnd() < MUTG) G->intervalles[i] = rand() % INTERVALLES;
-		if (rnd() < MUTP) P->intervalles[i] = rand() % INTERVALLES;
+		if (rnd() < MUTG_ema_int) G->intervalles[i] = rand() % INTERVALLES;
+		if (rnd() < MUTP_ema_int) P->intervalles[i] = rand() % INTERVALLES;
 	}
 
 	//	Mixage des `neu_depuis` & `flt_depuis`
-	for (uint i=0; i < G->couches; i++) {
+	for (uint i=0; i < G->C; i++) {
 		if (G->neu_depuis[i] != 0) {
 			for (uint j=0; j < G->y[i]; j++) {
 				for (uint k=0; k < G->n[i]; k++) {
 					c = G->neu_depuis[i][j][k];
 					if (rnd() < GP) G->neu_depuis[i][j][k] = P->neu_depuis[i][j][k];
-					if (rnd() < PG) P->eneu_depuis[i][j][k] = c;
+					if (rnd() < PG) P->neu_depuis[i][j][k] = c;
 
-					if (rnd() < MUTG) G->neu_depuis[i][j][k] = rand() % G->y[i-1];
-					if (rnd() < MUTP) P->neu_depuis[i][j][k] = rand() % G->y[i-1];
+					if (rnd() < MUTG_depuis) G->neu_depuis[i][j][k] = rand() % G->y[i-1];
+					if (rnd() < MUTP_depuis) P->neu_depuis[i][j][k] = rand() % G->y[i-1];
 				};
 			};
 		} else if (G->flt_depuis[i] != 0) {
@@ -83,8 +89,8 @@ void mixer(Mdl_t * G, Mdl_t * P) {
 				if (rnd() < GP) G->flt_depuis[i][j] = P->flt_depuis[i][j];
 				if (rnd() < PG) P->flt_depuis[i][j] = c;
 
-				if (rnd() < MUTG) G->flt_depuis[i][j] = rand() % (G->y[i-1] - G->n[i]);
-				if (rnd() < MUTP) P->flt_depuis[i][j] = rand() % (G->y[i-1] - G->n[i]);
+				if (rnd() < MUTG_depuis) G->flt_depuis[i][j] = rand() % (G->y[i-1] - G->n[i]);
+				if (rnd() < MUTP_depuis) P->flt_depuis[i][j] = rand() % (G->y[i-1] - G->n[i]);
 			}
 		};
 	};
@@ -92,34 +98,40 @@ void mixer(Mdl_t * G, Mdl_t * P) {
 
 //	=======================================
 
-void calcule_score(Mdl_t * mdl, float * _gain, float * _prediction) {
-	float p0, p1;
-
-	*_gain = USDT;
-	*_prediction = 0;
+void gain(Mdl_t * mdl, float * _gain, float * _prediction) {
+	_gain[0] = USDT;
+	_prediction[0] = 0.0;
 
 	float _f, p0, p1;
 	for (uint i=DEPART; i < PRIXS-1; i++) {
+		p1 = prixs[i+1];
+		p0 = prixs[i];
+		//
 		_f = signe( f(mdl, i) );
-
-		_gain += _gain * _f * 0.20 * LEVIER * (p1/p0 - 1.0);	//20%
+		
+		if (_gain[0] > 0) _gain[0] += _gain[0] * _f * 0.20 * LEVIER * (p1/p0 - 1.0);	//20%
+		//
 		if (signe(p1/p0-1.0) == _f)
-			_prediction += 1.0;
+			_prediction[0] += 1.0;
 	};
+	if (_gain[0] < 0) _gain[0] = 0;
 
-	*_gain -= USDT;
-	*_prediction /= (float)(PRIXS-1-DEPART);
+	_gain[0] -= USDT;
+	_prediction[0] /= (float)(PRIXS-1-DEPART);
 };
 
 //	=======================================
 
 int main() {
+	srand(0);
+	charger_les_prixs();
+
 	//	La population
-	uint n = 10;
+	uint n = 3;
 #define K 1 		// K : combien de perdants pour 1 gagant
 	uint N = (1+K)*n;
 	Mdl_t * mdl[N];
-	for (uint i=0; i < N; i++) mdl[i] = cree_mdl(C, y, n, type);
+	for (uint i=0; i < N; i++) mdl[i] = cree_mdl(__C, __y, __n, __type);
 			
 	//	Les points de score
 	float gains[N]; 		uint rang_gains[N];			//gain exacte depuis le depart avec un pret
@@ -129,8 +141,22 @@ int main() {
 	uint points[N];
 	uint cintasat[N];	//#0, #1, #...  le 0-eme (1er) correspond a quel mdl, le 1-er ...
 
+	//srand(0);
+	//comportement(mdl[0]);
+
+	for (uint i=0; i < N; i++) {
+		printf("################################################\n");
+		plume_mdl(mdl[i]);
+	}
+
+	printf("==============================================================\n");
+	printf("==============================================================\n");
+	printf("==============================================================\n");
+	printf("==============================================================\n");
+	printf("==============================================================\n");
+
 	//
-#define T 10
+#define T 100
 	for (uint t=0; t < T; t++) {
 		//	Scores
 		for (uint i=0; i < N; i++) {
@@ -189,10 +215,10 @@ int main() {
 		}
 
 		//	Plumage d'avancement
-#define TOUT_LES 2
-		if (t % TOUT_LES == 0)
-			printf("%i/%i %i%%   [gain=%f, prediction=%f]\n",
-				t, T, (float)(t+1)/(T)*100,
+#define TOUT_LES 10
+		if (t % TOUT_LES == 0 || t==(T-1))
+			printf("%i/%i %.3g%%   [gain=%f, prediction=%f]\n",
+				t+1, T, (float)(t+1)/(T)*100,
 				gains[cintasat[0]], prediction[cintasat[0]]);
 
 		//	Si pas derniere iteration
@@ -204,4 +230,11 @@ int main() {
 			}
 		}
 	}
+
+	for (uint i=0; i < N; i++) {
+		printf("################################################\n");
+		plume_mdl(mdl[i]);
+	}
+	srand(0);
+	comportement(mdl[cintasat[0]]);
 };
