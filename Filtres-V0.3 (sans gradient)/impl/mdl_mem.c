@@ -14,6 +14,11 @@ Mdl_t * cree_mdl(uint C, uint * y, uint * n, uint * type)
 {
 	Mdl_t * mdl = malloc(sizeof(Mdl_t));
 	//
+	assert(C > 0);
+	assert(type[0] == 0);
+	assert(y[C-1] == 1);
+	assert(n[0] <= MAX_N_PREMIERE_COUCHE);
+	//
 	mdl->C = C;
 	mdl->y = copier_uint(y, C);
 	mdl->n = copier_uint(n, C);
