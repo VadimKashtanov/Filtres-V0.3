@@ -1,9 +1,9 @@
 #include "mdl.h"
 
-uint __C = 6;
-uint __y[]    = {30,13, 7,4,2,1};
-uint __n[]    = { 7, 5, 4,3,3,2};
-uint __type[] = { 0, 2, 2,2,2,2};
+uint __C = 7;
+uint __y[]    = {30,10,40,7,4,2,1};
+uint __n[]    = { 8,5, 3,4,2,2,2};
+uint __type[] = { 0,1, 2,2,2,2,2};
 
 
 /*
@@ -20,12 +20,20 @@ uint __type[] = { 0, 2, 2,2,2,2};
 #define GP 1.00
 #define PG (1.00-GG)
 #define PP (1.00-GP)
-float MUTG_cst     =.00,  MUTP_cst     =.10;
-float MUTG_p       =.00,  MUTP_p       =.05;
-float MUTG_ema_int =.00,  MUTP_ema_int =.00;
-float MUTG_depuis  =.00,  MUTP_depuis  =.05;
+float MUTG_cst     =.00,  MUTP_cst     =.05;
+float MUTG_p       =.00,  MUTP_p       =.02;
+float MUTG_ema_int =.00,  MUTP_ema_int =.01;
+float MUTG_depuis  =.00,  MUTP_depuis  =.01;
 
-void mixer(Mdl_t * G, Mdl_t * P) {
+void mixer(Mdl_t * G, Mdl_t * P, Env_t env, uint mode) {
+	float PG = (1.00-env.GG);
+	float PP = (1.00-env.GP);
+	float MUTG_cst     =.00,  MUTP_cst     =.05;
+	float MUTG_p       =.00,  MUTP_p       =.02;
+	float MUTG_ema_int =.00,  MUTP_ema_int =.01;
+	float MUTG_depuis  =.00,  MUTP_depuis  =.01;
+
+
 	assert(G->constes == P->constes);
 	assert(G->poids == P->poids);
 
@@ -137,8 +145,8 @@ void gain(Mdl_t * mdl, float * _gain, float * _prediction) {
 	_prediction[0] = 0.0;
 
 	float _f, p0, p1;
-	for (uint i=DEPART; i < PRIXS-1; i++) {
-		p1 = prixs[i+1];
+	for (uint i=DEPART; i < PRIXS-1-3; i++) {
+		p1 = prixs[i+2];
 		p0 = prixs[i];
 		//
 		_f = signe( f(mdl, i) );
@@ -155,7 +163,7 @@ void gain(Mdl_t * mdl, float * _gain, float * _prediction) {
 	if (_gain[0] < 0) _gain[0] = 0;
 
 	_gain[0] -= USDT;
-	_prediction[0] /= (float)(PRIXS-1-DEPART);
+	_prediction[0] /= (float)(PRIXS-1-DEPART-3);
 	_prediction[0] *= (1+div_par);
 
 	//uint h = hash_mdl(mdl);
@@ -169,6 +177,7 @@ void gain(Mdl_t * mdl, float * _gain, float * _prediction) {
 int main() {
 	srand(0);
 	charger_les_prixs();
+
 
 	//	Strategie : sng dernier changement 	= 0.539
 	//	Strategie : 100% achat 					= 0.476
@@ -186,8 +195,8 @@ int main() {
 	printf("%f\n", __pred/(PRIXS-1-1)); //*/
 
 	//	La population
-	uint n = 4;
-#define K 15 		// K : combien de perdants pour 1 gagant
+	uint n = 3;
+#define K 7 		// K : combien de perdants pour 1 gagant
 	uint N = (1+K)*n;
 	Mdl_t * mdl[N];
 	for (uint i=0; i < N; i++) mdl[i] = cree_mdl(__C, __y, __n, __type);
@@ -208,7 +217,7 @@ int main() {
 	//
 	INIT_CHRONO()
 	//
-#define T 10000
+#define T 100
 	for (uint t=0; t < T; t++) {
 		DEPART_CHRONO()
 		//	Scores
@@ -278,11 +287,16 @@ int main() {
 		//	Plumage d'avancement
 #define TOUT_LES 10
 		if (t % TOUT_LES == 0 || t==(T-1)) {
-			float tmis = VALEUR_CHRONO()/TOUT_LES;
-			printf("%i/%i %.3g%%   [gain=%f, prediction=%f]   ~temps=%f mins\n",
+			float tmis = VALEUR_CHRONO()/(1+t);	//temp par iteration
+			uint reste_sec = (uint)roundf(tmis*(T-t-1));	//cmb il rest d'iterations
+			uint secondes = reste_sec % 60;
+			uint mins = (reste_sec-secondes)/60;
+			printf("il rest %f secondes\n", tmis*(T-t-1));
+			//
+			printf("%i/%i %.3g%%   [gain=%f, prediction=%f]   ~temps=%i mins %i secs\n",
 				t+1, T, (float)(t+1)/(T)*100,
 				gains[cintasat[0]], prediction[cintasat[0]],
-				(T-(t+1))*tmis/60
+				mins, secondes
 			);
 		}
 

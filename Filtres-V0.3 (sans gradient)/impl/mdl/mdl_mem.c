@@ -302,7 +302,7 @@ Mdl_t * lire_mdl(char * fichier) {
 	return mdl;
 };
 
-static float ppossibles[] = {-2, -1, 1, 2};
+static float ppossibles[] = {-2, -1, 0, +1, +2};
 float poid_rnd() {
-	return ppossibles[rand() % 4];
+	return ppossibles[rand() % 5];
 };

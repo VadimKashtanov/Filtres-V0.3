@@ -40,8 +40,12 @@ static float filtre_n(float * x, float * filtre, uint n) {
 
 static float neurone_n(float * x, float * poid, uint n) {
 	float _somme = 0.0;
-	for (uint i=0; i < n; i++) _somme += x[i]*poid[i];
-	return _somme/n;
+	float coef = 0;
+	for (uint i=0; i < n; i++) {
+		_somme += x[i]*poid[i];
+		coef += fabs(poid[i]);
+	}
+	return _somme/coef;	//si que des 1, alors coef==n
 };
 
 float f(Mdl_t * mdl, uint depart) {

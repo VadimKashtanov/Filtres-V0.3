@@ -1,7 +1,7 @@
 #include "etc.h"
 
 float rnd() {
-	return (float)(rand()%99)/99.0;	//rand()%100 pour avoire 1.0
+	return (float)(rand()%1000)/999.0;	//rand()%100 pour avoire 1.0
 };
 
 inline float ___exp(register float x)  // cubic spline approximation
