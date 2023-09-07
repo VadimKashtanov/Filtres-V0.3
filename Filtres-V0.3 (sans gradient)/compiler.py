@@ -8,13 +8,10 @@ def lire_somme(chemin):
 		return [(i+1)*elm[i] for i in range(len(elm))]
 
 chemins = [
-	'impl/', #'impl/couches/'
-	#'impl/mdl/', #'impl/mdl/coeur/', 'impl/mdl/gradient/', 'impl/mdl/outils/',
-	#'impl/selection/',
-	#'impl/insts/',
-	#'impl/optimisation/',
-	#'impl/prospection/'
-]	#, 'src/selection/gen/', 'src/selection/sel/'] #ou utiliser walk()
+	'impl/',
+	'impl/autre/',
+	'impl/mdl/'
+]
 fichiers = [
 	chemin+fichier
 		for chemin in chemins

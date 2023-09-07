@@ -1,3 +1,4 @@
+#rm bin/*; rm trace; rm trace_tete;
 clear
 printf "[***] Compilation ... \n"
 

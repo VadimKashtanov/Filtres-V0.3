@@ -1,9 +1,11 @@
 #include "mdl.h"
 
+
 uint __C = 5;
 uint __y[]    = {20,9,4,2,1};
 uint __n[]    = { 5,4,3,3,2};
 uint __type[] = { 0,2,2,2,2};
+
 
 /*
 					80%
@@ -17,9 +19,9 @@ uint __type[] = { 0,2,2,2,2};
 
 #define GG 1.00
 #define GP 1.00
-#define PG 1.00-GG
-#define PP 1.00-GP
-float MUTG_cst     =.00,  MUTP_cst     =.20;
+#define PG (1.00-GG)
+#define PP (1.00-GP)
+float MUTG_cst     =.00,  MUTP_cst     =.10;
 float MUTG_p       =.00,  MUTP_p       =.10;
 float MUTG_ema_int =.00,  MUTP_ema_int =.00;
 float MUTG_depuis  =.00,  MUTP_depuis  =.00;
@@ -41,24 +43,21 @@ void mixer(Mdl_t * G, Mdl_t * P) {
 		if (rnd() < MUTP_cst) P->conste[i] = (3*G->conste[i] + rnd())/4;
 	};
 
-	//plume_mdl(G);
-	//plume_mdl(P);
-
 	float _maxG, _maxP, _minG, _minP;
 	float _P, _G;
 	uint p;
-	for (uint i=0; i < G->C; i++) {
-		if (G->type[i] != 2) {
-			for (uint j=0; j < G->y[i]; j++) {
-				_G = G->conste[G->conste_depart[c] + j*G->n[i] + 0];
-				_P = P->conste[G->conste_depart[c] + j*G->n[i] + 0];
+	for (uint c=0; c < G->C; c++) {
+		if (G->type[c] != 2) {
+			for (uint j=0; j < G->y[c]; j++) {
+				_G = G->conste[G->conste_depart[c] + j*G->n[c] + 0];
+				_P = P->conste[G->conste_depart[c] + j*G->n[c] + 0];
 				_maxG = _G;
 				_maxP = _P;
 				_minG = _G;
 				_minP = _P;
-				for (uint k=1; k < G->n[i]; k++) {
-					_G = G->conste[G->conste_depart[c] + j*G->n[i] + k];
-					_P = P->conste[G->conste_depart[c] + j*G->n[i] + k];
+				for (uint k=1; k < G->n[c]; k++) {
+					_G = G->conste[G->conste_depart[c] + j*G->n[c] + k];
+					_P = P->conste[G->conste_depart[c] + j*G->n[c] + k];
 					if (_G >= _maxG) _maxG = _G;
 					if (_G <= _minG) _minG = _G;
 					if (_P >= _maxP) _maxP = _P;
@@ -68,8 +67,8 @@ void mixer(Mdl_t * G, Mdl_t * P) {
 				if (_minG == _maxG) ERR("%f == %f\n", _minG, _maxG);
 				if (_maxP == _minP) ERR("%f == %f\n", _minP, _maxP);
 				//
-				for (uint k=0; k < G->n[i]; k++) {
-					p = G->conste_depart[c] + j*G->n[i] + k;
+				for (uint k=0; k < G->n[c]; k++) {
+					p = G->conste_depart[c] + j*G->n[c] + k;
 					G->conste[p] = (G->conste[p]-_minG)/(_maxG-_minG);
 					P->conste[p] = (P->conste[p]-_minP)/(_maxP-_minP);
 				}
@@ -154,16 +153,10 @@ void gain(Mdl_t * mdl, float * _gain, float * _prediction) {
 
 	_gain[0] -= USDT;
 	_prediction[0] /= (float)(PRIXS-1-DEPART);
-
-	/*if (_gain[0] > 10000) {
-		printf("%f %f\n", _gain[0], _prediction[0]);
-		plume_mdl(mdl);
-		comportement(mdl);
-		exit(0);
-	}*/
 };
 
 //	=======================================
+
 
 int main() {
 	srand(0);
@@ -182,7 +175,7 @@ int main() {
 		p0 = prixs[i];
 		__pred += 1.0*(signe(p1/p0 - 1) == _f);
 	};
-	printf("%f\n", __pred/(PRIXS-1-1));*/
+	printf("%f\n", __pred/(PRIXS-1-1)); //*/
 
 	//	La population
 	uint n = 2;
@@ -192,27 +185,23 @@ int main() {
 	for (uint i=0; i < N; i++) mdl[i] = cree_mdl(__C, __y, __n, __type);
 			
 	//	Les points de score
-	float gains[N]; 		uint rang_gains[N];			//gain exacte depuis le depart avec un pret
+	float gains[N]; 		uint rang_gains[N];				//gain exacte depuis le depart avec un pret
 	float prediction[N]; 	uint rang_prediction[N];	//% reussite de prediction de tendance
 
 	//	Points Finaux et 
 	uint points[N];
 	uint cintasat[N];	//#0, #1, #...  le 0-eme (1er) correspond a quel mdl, le 1-er ...
 
-	//srand(0);
-	//comportement(mdl[0]);
-
-	//for (uint i=0; i < N; i++) {
-		//printf("################################################\n");
-		//plume_mdl(mdl[i]);
-//	}
+	for (uint i=0; i < n; i++) {
+		for (uint k=0; k < K; k++)
+			mixer(mdl[rand()%N], mdl[rand()%N]);
+	}
 
 	printf("==============================================================\n");
 	printf("==============================================================\n");
 	printf("==============================================================\n");
 	printf("==============================================================\n");
 	printf("==============================================================\n");
-
 	//
 #define T 100
 	for (uint t=0; t < T; t++) {
@@ -229,6 +218,10 @@ int main() {
 		}
 		printf("\n");
 
+		//
+		//		!!!!!!!! toujours pas regler le probleme du cintastat[0]
+		//
+
 		//	Sommes des Points
 		//printf("::::");
 		for (uint i=0; i < N; i++) {
@@ -241,20 +234,12 @@ int main() {
 		for (uint i=0; i < N; i++) {
 			for (uint j=i+1; j < N; j++) {
 				if (gains[rang_gains[i]] < gains[rang_gains[j]]) {
-					//tmp = gains[rang_gains[i]];
-					//gains[rang_gains[i]] = gains[rang_gains[j]];
-					//gains[rang_gains[j]] = tmp;
-					//
 					c = rang_gains[i];
 					rang_gains[i] = rang_gains[j];
 					rang_gains[j] = c;
 				}
 
 				if (prediction[rang_prediction[i]] < prediction[rang_prediction[j]]) {
-					//tmp = prediction[rang_prediction[i]];
-					//prediction[rang_prediction[i]] = prediction[rang_prediction[j]];
-					//prediction[rang_prediction[j]] = tmp;
-					//
 					c = rang_prediction[i];
 					rang_prediction[i] = rang_prediction[j];
 					rang_prediction[j] = c;
@@ -274,16 +259,14 @@ int main() {
 		for (uint i=0; i < N; i++) {
 			for (uint j=i; j < N; j++) {
 				if (points[cintasat[i]] < points[cintasat[j]]) {
-					//c = points[cintasat[i]];
-					//points[cintasat[i]] = points[cintasat[j]];
-					//points[cintasat[j]] = c;
-					//
 					c = cintasat[i];
 					cintasat[i] = cintasat[j];
 					cintasat[j] = c;
 				}
 			}
 		}
+		//for (uint i=0; i < N; i++) printf("%i:%i, ", i, cintasat[i]);
+		//printf("\n");
 
 		//	Plumage d'avancement
 #define TOUT_LES 10
@@ -292,47 +275,21 @@ int main() {
 				t+1, T, (float)(t+1)/(T)*100,
 				gains[cintasat[0]], prediction[cintasat[0]]);
 
+		plume_mdl(mdl[cintasat[0]]);
 		//	Si pas derniere iteration
 		if (t != T-1) {
 			//	Mixage
 			for (uint i=0; i < n; i++) {	//	n = N / (K+1)
-				for (uint k=0; k < K; k++)
+				for (uint k=0; k < K; k++) {
 					mixer(mdl[cintasat[i]], mdl[cintasat[n + i*K + k]]);
-					//mixer(mdl[cintasat[i]], mdl[cintasat[n + i*K + k]]);
+				}
 			}
 		}
+		plume_mdl(mdl[cintasat[0]]);
 	}
 
-	//for (uint i=0; i < N; i++) {
-		//printf("################################################\n");
-		plume_mdl(mdl[cintasat[0]]);
-	//}
+	plume_mdl(mdl[cintasat[0]]);
+	
 	srand(0);
 	comportement(mdl[cintasat[0]]);
 };
-
-
-int main0() {
-	srand(0);
-	charger_les_prixs();
-
-	//	La population
-	Mdl_t * mdl;
-	float _gain[1];
-	float _prediction[1];
-	//
-	float _max=0;
-#define M 3
-	for (uint i=0; i < M; i++) {
-		srand(0);
-		mdl = cree_mdl(__C, __y, __n, __type);
-		gain(mdl, _gain, _prediction);
-		liberer_mdl(mdl);
-		//if (_prediction[0] > _max)
-		_max = _prediction[0];
-		//
-		//if (i % 1000 == 0)
-		printf("%i/%i %f\n", i, M, _max);
-	}
-	printf("%f\n", _max);
-}
