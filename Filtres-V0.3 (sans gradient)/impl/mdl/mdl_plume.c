@@ -51,7 +51,7 @@ static void plume_var(Mdl_t * mdl) {
 void plume_mdl(Mdl_t * mdl) {
 	printf("======== Mdl ==========\n");
 	uint C = mdl->C;
-	/*for (uint i=0; i < C; i++) {
+	for (uint i=0; i < C; i++) {
 		printf("%i| %s n=%i:\n", i, noms[mdl->type[i]], mdl->n[i]);
 		for (uint j=0; j < mdl->y[i]; j++) {
 			if (mdl->type[i] == 2) {
@@ -68,7 +68,7 @@ void plume_mdl(Mdl_t * mdl) {
 					j, mdl->ema[j], mdl->intervalles[j]);
 			}
 		}
-	};*/
+	};
 
 	plume_poids(mdl);
 	plume_constes(mdl);

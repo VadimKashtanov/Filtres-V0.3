@@ -80,6 +80,23 @@ Mdl_t * cree_mdl(uint C, uint * y, uint * n, uint * type)
 	FOR(0, i, mdl->poids) mdl->poid[i] = poid_rnd();
 	FOR(0, i, mdl->constes) mdl->conste[i] = rnd();
 	//
+	FOR(0, c, mdl->C) {
+		if (mdl->type[c] < 2) {
+			FOR(0, i, mdl->y[c]) {
+				uint d = mdl->conste_depart[c] + mdl->n[c]*i;
+				float _max=mdl->conste[d], _min=mdl->conste[d];
+				FOR(1, k, mdl->n[c]) {
+					if (_max < mdl->conste[d+k]) _max = mdl->conste[d+k];
+					if (_min > mdl->conste[d+k]) _min = mdl->conste[d+k];
+				}
+				//
+				FOR(0, k, mdl->n[c]) {
+					mdl->conste[d+k] = (mdl->conste[d+k]-_min)/(_max-_min);
+				};
+			}
+		};
+	};
+	//
 	return mdl;
 };
 
@@ -107,6 +124,91 @@ void liberer_mdl(Mdl_t * mdl) {
 	free(mdl->conste_depart);
 	free(mdl->poid_depart);
 	free(mdl->y_depart);
+};
+
+Mdl_t * copier_mdl(Mdl_t * mdl) {
+	Mdl_t * ret = cree_mdl(mdl->C, mdl->y, mdl->n, mdl->type);
+	memcpy(ret->ema, mdl->ema, sizeof(float)*mdl->y[0]);
+	memcpy(ret->intervalles, mdl->intervalles, sizeof(float)*mdl->y[0]);
+	memcpy(ret->conste, mdl->conste, sizeof(float)*mdl->constes);
+	memcpy(ret->poid, mdl->poid, sizeof(float)*mdl->poids);
+	FOR(0, i, mdl->C) {
+		if (mdl->type[i] == 2) {
+			FOR(0, j, mdl->y[i]) {
+				memcpy(ret->neu_depuis[i][j], mdl->neu_depuis[i][j], sizeof(uint)*mdl->n[i]);
+			}
+		} else if (mdl->type[i] == 1) {
+			memcpy(ret->flt_depuis[i], mdl->flt_depuis[i], sizeof(uint)*mdl->y[i]);
+		}
+	}
+	return ret;
+};
+
+static uint comparer_uints(uint * A, uint * B, uint l) {
+	FOR(0, i, l) if (A[i] != B[i]) return 1;
+	return 0;
+}
+
+static uint comparer_floats(float * A, float * B, uint l) {
+	FOR(0, i, l) if (A[i] != B[i]) return 1;
+	return 0;
+}
+
+uint meme_mdl(Mdl_t * A, Mdl_t * B) {
+	if (A->C != B->C) return 1;
+	if (A->max_n != B->max_n) return 1;
+	if (A->constes != B->constes) return 1;
+	if (A->poids != B->poids) return 1;
+	if (A->vars != B->vars) return 1;
+	//
+	if (comparer_uints(A->y, B->y, A->C) == 1) return 1;
+	if (comparer_uints(A->n, B->n, A->C) == 1) return 1;
+	if (comparer_uints(A->type, B->type, A->C) == 1) return 1;
+	if (comparer_uints(A->ema, B->ema, A->y[0]) == 1) return 1;
+	if (comparer_uints(A->intervalles, B->intervalles, A->y[0]) == 1) return 1;
+	//
+	if (comparer_floats(A->poid, B->poid, A->poids) == 1) return 1;
+	if (comparer_floats(A->conste, B->conste, A->constes) == 1) return 1;
+	//
+	FOR(0, i, A->C) {
+		if (A->type[i] == 2) {
+			FOR(0, j, A->y[i]) {
+				if (comparer_uints(A->neu_depuis[i][j], B->neu_depuis[i][j], A->n[i])==1)
+					return 1;
+			}
+		} else if (A->type[i] == 1) {
+			if (comparer_uints(A->flt_depuis[i], B->flt_depuis[i], A->y[i])==1)
+				return 1;
+		}
+	};
+	return 0;
+};
+
+#define HASH(h, val) (697*((h+134*(val+1) + 1291)%15734)+87) % 10000;
+
+uint hash_mdl(Mdl_t * mdl) {
+	uint h = 0;
+	FOR(0, i, mdl->C) {
+		if (mdl->type[i] == 2) {
+			FOR(0, j, mdl->y[i]) {
+				FOR(0, k, mdl->n[i]) {
+					h = HASH(h, mdl->neu_depuis[i][j][k]);
+				}
+			}
+		} else if (mdl->type[i] == 1) {
+			FOR(0, k, mdl->y[i]) {
+				h = HASH(h, mdl->flt_depuis[i][k]);
+			}
+		}
+		h = HASH(h, mdl->ema[i]);
+		h = HASH(h, mdl->intervalles[i]);
+		h = HASH(h, mdl->y[i]);
+		h = HASH(h, mdl->n[i]);
+		h = HASH(h, mdl->type[i]);
+	};
+	FOR(0, i, mdl->poids) h = HASH(h, (uint)roundf(mdl->poid[i]*10000));
+	FOR(0, i, mdl->constes) h = HASH(h, (uint)roundf(mdl->conste[i]*10000));
+	return h;
 };
 
 void ecrire_mdl(Mdl_t * mdl, char * fichier) {

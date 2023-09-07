@@ -29,6 +29,10 @@ typedef struct {
 //	Allocation Memoire
 Mdl_t * cree_mdl(uint C, uint * y, uint * n, uint * type);
 void liberer_mdl(Mdl_t * mdl);
+Mdl_t * copier_mdl(Mdl_t * mdl);
+
+uint meme_mdl(Mdl_t * A, Mdl_t * B);
+uint hash_mdl(Mdl_t * mdl);
 
 //	Memoire dure
 void ecrire_mdl(Mdl_t * mdl, char * file);

@@ -37,7 +37,7 @@
 
 //  ==== Mesure du temps ====
 #define INIT_CHRONO() time_t chrono;
-#define DEPART_CHRONOS() chrono = clock();
+#define DEPART_CHRONO() chrono = clock();
 #define VALEUR_CHRONO() (((float)(clock()-chrono))/CLOCKS_PER_SEC)
 
 //	===== Plumation de courbes =====
